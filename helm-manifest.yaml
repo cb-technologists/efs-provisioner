@@ -14,9 +14,9 @@ metadata:
     storageclass.kubernetes.io/is-default-class: "true"
 provisioner: example.com/aws-efs
 parameters:
-  gidAllocate: "true"
-  gidMin: "2000"
-  gidMax: "65535"
+  gidAllocate: "false"
+  # gidMin: "2000"
+  # gidMax: "50000"
 reclaimPolicy: Delete
 ---
 # Source: efs-provisioner/templates/serviceaccount.yaml

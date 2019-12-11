@@ -4,9 +4,9 @@ efsProvisioner:
   storageClass:
     isDefault: true
     gidAllocate:
-      enabled: true
-      gidMin: 2000
-      gidMax: 65535
+      enabled: false
+      # gidMin: 2000
+      # gidMax: 50000
 image:
   repository: mattelgin/efs-provisioner
   tag: latest

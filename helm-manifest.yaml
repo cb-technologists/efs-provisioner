@@ -113,9 +113,9 @@ spec:
         app: efs-provisioner
         release: "efs-provisioner"
     spec:
-      securityContext:
-        runAsUser: 2000
-        fsGroup: 2000
+      securityContext:    # add to use efs-provisioner user/group
+        runAsUser: 2000   # add to use efs-provisioner user/group
+        fsGroup: 2000     # add to use efs-provisioner user/group
       serviceAccount: efs-provisioner
       containers:
       - name: efs-provisioner
@@ -134,6 +134,7 @@ spec:
         - name: pv-volume
           subPath: example-pv
           mountPath: /persistentvolumes
+      # comment out initContainers section to remove
       # initContainers:
       # - name: "init-path"
       #   image: gcr.io/google_containers/busybox:1.27

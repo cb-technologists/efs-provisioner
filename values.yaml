@@ -1,0 +1,13 @@
+efsProvisioner:
+  efsFileSystemId: UPDATE_WITH_EFS_FILE_SYSTEM_ID
+  awsRegion: us-east-1
+  storageClass:
+    isDefault: true
+    gidAllocate:
+      enabled: true
+      gidMin: 2000
+      gidMax: 65535
+image:
+  repository: mattelgin/efs-provisioner
+  tag: latest
+  pullPolicy: Always

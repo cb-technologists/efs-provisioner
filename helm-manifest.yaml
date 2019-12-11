@@ -1,0 +1,151 @@
+---
+# Source: efs-provisioner/templates/storageclass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+  name: efs
+  labels:
+    app: efs-provisioner
+    env: dev
+    chart: efs-provisioner-0.8.0
+    release: "efs-provisioner"
+    heritage: "Helm"
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: example.com/aws-efs
+parameters:
+  gidAllocate: "true"
+  gidMin: "2000"
+  gidMax: "65535"
+reclaimPolicy: Delete
+---
+# Source: efs-provisioner/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: efs-provisioner
+  labels:
+    app: efs-provisioner
+    env: dev
+    chart: efs-provisioner-0.8.0
+    release: "efs-provisioner"
+    heritage: "Helm"
+  annotations:
+    {}
+---
+# Source: efs-provisioner/templates/clusterrole.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: efs-provisioner
+  labels:
+    app: efs-provisioner
+    env: dev
+    chart: efs-provisioner-0.8.0
+    release: "efs-provisioner"
+    heritage: "Helm"
+  annotations:
+    {}
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+# Source: efs-provisioner/templates/clusterrolebinding.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: efs-provisioner
+  labels:
+    app: efs-provisioner
+    env: dev
+    chart: efs-provisioner-0.8.0
+    release: "efs-provisioner"
+    heritage: "Helm"
+  annotations:
+    {}
+subjects:
+  - kind: ServiceAccount
+    name: efs-provisioner
+    namespace: efs-provisioner
+roleRef:
+  kind: ClusterRole
+  name: efs-provisioner
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: efs-provisioner/templates/deployment.yaml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: efs-provisioner
+  labels:
+    app: efs-provisioner
+    env: dev
+    chart: efs-provisioner-0.8.0
+    release: "efs-provisioner"
+    heritage: "Helm"
+  annotations:
+    {}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: efs-provisioner
+      release: "efs-provisioner"
+  revisionHistoryLimit: 10
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: efs-provisioner
+        release: "efs-provisioner"
+    spec:
+      securityContext:
+        runAsUser: 2000
+        fsGroup: 2000
+      serviceAccount: efs-provisioner
+      containers:
+      - name: efs-provisioner
+        image: "mattelgin/efs-provisioner:latest"
+        imagePullPolicy: Always
+        env:
+        - name: FILE_SYSTEM_ID
+          value: UPDATE_WITH_EFS_FILE_SYSTEM_ID
+        - name: AWS_REGION
+          value: us-east-1
+        - name: PROVISIONER_NAME
+          value: example.com/aws-efs
+        resources:
+            {}
+        volumeMounts:
+        - name: pv-volume
+          subPath: example-pv
+          mountPath: /persistentvolumes
+      # initContainers:
+      # - name: "init-path"
+      #   image: gcr.io/google_containers/busybox:1.27
+      #   imagePullPolicy: IfNotPresent
+      #   command: [ "sh", "-c", "mkdir -p /efs-vol-root/example-pv" ]
+      #   resources:
+      #       {}
+      #   volumeMounts:
+      #   - name: pv-volume
+      #     mountPath: /efs-vol-root
+      volumes:
+      - name: pv-volume
+        nfs:
+          server: UPDATE_WITH_EFS_FILE_SYSTEM_ID.efs.us-east-1.amazonaws.com
+          path: /

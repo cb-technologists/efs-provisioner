@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    # apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    # apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+  name: efs-provisioner-psp
+spec:
+  allowPrivilegeEscalation: false
+  privileged: false
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+    - min: 1
+      max: 65535
+  runAsUser:
+    rule: MustRunAs
+    ranges:
+    - min: 1
+      max: 65535
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+  - emptyDir
+  - secret
+  - downwardAPI
+  - configMap
+  - persistentVolumeClaim
+  - projected
+  - nfs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: efs-provisioner-psp
+  namespace: efs-provisioner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: efs-provisioner-role
+subjects:
+- kind: ServiceAccount
+  name: efs-provisioner
+  namespace: efs-provisioner
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: efs-provisioner-role
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - efs-provisioner-psp
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
